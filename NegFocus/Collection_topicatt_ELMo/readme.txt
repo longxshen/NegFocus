@@ -4,7 +4,6 @@ model.py  :main model
 loader.py :dataset preprocess
 utils.py  :initialize parameters
 
-
 Dataset template
 `` `` O punct * throwing -5 O
 I PRP B-NP nsubj A0 throwing -4 I
