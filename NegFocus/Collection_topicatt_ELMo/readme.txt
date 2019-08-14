@@ -1,10 +1,13 @@
 File declaration
+
 train.py  :train, test and evaulation
 model.py  :main model
 loader.py :dataset preprocess
 utils.py  :initialize parameters
 
+
 Dataset template
+
 `` `` O punct * throwing -5 O
 I PRP B-NP nsubj A0 throwing -4 I
 wo MD B-VP aux AM-MOD throwing -3 O
@@ -24,4 +27,5 @@ throw VB I-VP conj * throwing 7 O
 he PRP B-NP nsubj * throwing 11 O
 says VBZ B-VP root * throwing 12 O
 . . O punct * throwing 13 O
+
 each column is word, part-of-speech, chunk label, dependent node, semantic role, negative word, relative position label(I,O)
