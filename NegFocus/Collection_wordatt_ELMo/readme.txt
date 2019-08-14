@@ -4,7 +4,7 @@ model.py  :main model
 loader.py :dataset preprocess
 utils.py  :initialize parameters
 
-数据集处理参考模板：
+Dataset template
 `` `` O punct * throwing -5 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . O
 I PRP B-NP nsubj A0 throwing -4 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . I
 wo MD B-VP aux AM-MOD throwing -3 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . O
@@ -24,9 +24,7 @@ throw VB I-VP conj * throwing 7 `` I 'm not so young anymore , '' concedes the c
 he PRP B-NP nsubj * throwing 11 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . O
 says VBZ B-VP root * throwing 12 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . O
 . . O punct * throwing 13 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . O
-其中，第一列表示词，第二列表示词性，第三列表示语块标签，第四列表示依存节点，第五列表示语义角色，第六列表示否定动词，第七列表示相对位置，第八列到倒数第二列为上下文句子以###隔开，最后一列为标签（I、O）
+
 The first to seventh columns are word, part-of-speech, chunk label, dependent node, semantic role, negative word, relative position .
 The eighth to last but one columns are context sentences divided by ###
 The last column is label(I,O)
-
-label(I,O)
