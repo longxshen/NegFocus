@@ -3,7 +3,7 @@ Bowei Zou, Longxiang Shen, Yu Hong, Guodong Zhou. Negative Focus Detection via C
 ## Prerequisition
 * Word embedding <br>
   https://allennlp.org/elmo <br>
-* Topic model tookit:gensim <br>
+* Topic model tookit: gensim <br>
   https://radimrehurek.com/gensim/index.html <br>
 * Topic model Wikipedia corpus <br>
   https://radimrehurek.com/gensim/wiki.html <br>
