@@ -4,7 +4,6 @@ model.py  :main model
 loader.py :dataset preprocess
 utils.py  :initialize parameters
 
-
 Dataset template
 `` `` O punct * throwing -5 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . O
 I PRP B-NP nsubj A0 throwing -4 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . I
