@@ -25,4 +25,4 @@ he PRP B-NP nsubj * throwing 11 O
 says VBZ B-VP root * throwing 12 O
 . . O punct * throwing 13 O
 
-The columns denote word, part-of-speech, chunk label, dependent node, semantic role, negative word, relative position label(I,O)
+The columns denote word, part-of-speech, chunk label, dependent node, semantic role, negative word, relative position, label(I,O)
