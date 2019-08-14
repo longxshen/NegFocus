@@ -25,6 +25,6 @@ he PRP B-NP nsubj * throwing 11 `` I 'm not so young anymore , '' concedes the c
 says VBZ B-VP root * throwing 12 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . O
 . . O punct * throwing 13 `` I 'm not so young anymore , '' concedes the cigar-chomping , 48-year-old Mr. Tiant . ### White-haired Pedro Ramos , at 54 the league 's oldest player and a pitcher-coach with the Suns , has lost even more speed . O
 
-The first to seventh columns are word, part-of-speech, chunk label, dependent node, semantic role, negative word, relative position .
+The first to seventh columns are word, part-of-speech, chunk label, dependent node, semantic role, negative word, relative position
 The eighth to last but one columns are context sentences divided by ###
 The last column is label(I,O)
