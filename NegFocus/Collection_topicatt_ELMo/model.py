@@ -98,7 +98,7 @@ class BiLSTM_CRF(nn.Module):
 
         self.dropout = nn.Dropout(0.3)
 
-        if True:  #根据具体加入的特征数量决定
+        if True:
             self.lstm = nn.LSTM(semroles_embedding_dim+300+1024 , hidden_dim, bidirectional=True)
         init_lstm(self.lstm)
 
@@ -130,8 +130,8 @@ class BiLSTM_CRF(nn.Module):
 
         return score
 
-    def _get_lstm_features(self, sentence, pos, conNode, depNode, semroles, cue, loc, Topic, ELMo, is_drop=True): #LSTM网络主函数,包含topic-attention
-
+    def _get_lstm_features(self, sentence, pos, conNode, depNode, semroles, cue, loc, Topic, ELMo, is_drop=True):
+        # LSTM main framework which contains topic-attention
         #embeds = self.word_embeds(sentence)
         embeds = ELMo
 
@@ -221,7 +221,6 @@ class BiLSTM_CRF(nn.Module):
             forward_var = viterbivars_t + feat
             backpointers.append(bptrs_t)
             backpointers_score.append(bptrs_score)
-            #print(backpointers_score)
 
         terminal_var = forward_var + self.transitions[self.tag_to_ix[STOP_TAG]]
         terminal_var.data[self.tag_to_ix[STOP_TAG]] = -10000.
@@ -233,16 +232,11 @@ class BiLSTM_CRF(nn.Module):
         best_path_score = [best_tag_score]#sequence of highest score
         best_path = [best_tag_id]#the path id of the highest score
 
-        #for bptrs_t in reversed(backpointers):
         for bptrs_score, bptrs_t in zip(reversed(backpointers_score), reversed(backpointers)):
-            #print(bptrs_t)
             best_tag_score = bptrs_score[best_tag_id]
-            best_tag_id = bptrs_t[best_tag_id]
-            
+            best_tag_id = bptrs_t[best_tag_id]        
             best_path_score.append(best_tag_score)
             best_path.append(best_tag_id)
-        #print(best_path)
-        #print('-----------------')
 	
         best_path_score.pop()
         start = best_path.pop()
@@ -251,7 +245,8 @@ class BiLSTM_CRF(nn.Module):
         best_path_score.reverse()
         return path_score, best_path, best_path_score
 
-    def neg_log_likelihood(self, sentence, tags, pos, conNode, depNode, semroles, cue, loc, Topic, ELMo): #训练模型，计算损失
+    def neg_log_likelihood(self, sentence, tags, pos, conNode, depNode, semroles, cue, loc, Topic, ELMo):
+	# train model and calculate the loss
         # sentence, tags is a list of ints
         # features is a 2D tensor, len(sentence) * self.tagset_size
         feats = self._get_lstm_features(sentence, pos, conNode, depNode, semroles, cue, loc, Topic, ELMo)#Seq_len * tagset_size
@@ -266,12 +261,13 @@ class BiLSTM_CRF(nn.Module):
             return scores
 
 
-    def forward(self, sentence, pos, conNode, depNode, semroles, cue, loc, Topic, ELMo): #通过训练的模型求出最优解码序列
+    def forward(self, sentence, pos, conNode, depNode, semroles, cue, loc, Topic, ELMo):
+        # get the max score tag_seq
         feats = self._get_lstm_features(sentence, pos, conNode, depNode, semroles, cue, loc, Topic, ELMo, False)
-        # viterbi to get tag_seq
-        if self.use_crf:
+        
+        if self.use_crf: #viterbi to get tag_seq
             score, tag_seq, seq_score = self.viterbi_decode(feats)
-            feats = feats[:, :2]#去除添加的两个start和end标签
+            feats = feats[:, :2]
 
             out_soft = torch.nn.functional.softmax(feats)
             tag_score = [out_soft[i][tag_seq[i]].cpu().data[0] for i in range(len(tag_seq))]
