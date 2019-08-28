@@ -71,7 +71,7 @@ optparser.add_option(
 )
 opts = optparser.parse_args()[0]
 
-parameters = OrderedDict()#OrderedDict会根据放入元素的先后顺序进行排序。所以输出的值是排好序的。
+parameters = OrderedDict()
 parameters['word_dim'] = opts.word_dim
 parameters['word_lstm_dim'] = opts.word_lstm_dim
 parameters['word_bidirect'] = opts.word_bidirect == 1
@@ -100,7 +100,7 @@ if not os.path.exists(models_path):
     os.makedirs(models_path)
 
 
-train_sentences = loader.load_sentences(opts.train)##3重列表
+train_sentences = loader.load_sentences(opts.train)
 dev_sentences = loader.load_sentences(opts.dev)
 test_sentences = loader.load_sentences(opts.test)
 
@@ -129,15 +129,15 @@ print("%i / %i / %i sentences in train / dev / test." % (
 
 
 def counts(dic):
-    vocab = set()  # 定义vocab为set型
+    vocab = set()
     maxlen = 0
     for w in dic:
         #w = w.lower()
         vocab.add(w)
-    vocab = sorted(list(vocab))  # 转换为list后进行排序
+    vocab = sorted(list(vocab))
     return vocab
 vocab = counts(dico_words)
-def _load_vocab(vocab_file):  # 加载vocab，senna_words.lst文件
+def _load_vocab(vocab_file):  # load vocab，senna_words.lst
     # load vocab from file
     vocab = []
     with open(vocab_file) as f:
@@ -150,30 +150,28 @@ def _load_embedding(embed_file, words_file):
     embed = np.load(embed_file)
     words = _load_vocab(words_file)
     for id, w in enumerate(words):
-        words2id[w] = id  # 字典的键是words中的一行(即词)，值为索引号(即行数)
+        words2id[w] = id 
     return embed, words2id
 def final_embeddings(pretrain_embed_file, pretrain_words_file, vocab, word_to_id):
     word_embeds = np.random.uniform(-np.sqrt(0.06), np.sqrt(0.06), (len(word_to_id), opts.word_dim))
     pretrain_embed, pretrain_words2id = _load_embedding(
-        pretrain_embed_file,  # 已经训练好的向量文件和词文件
+        pretrain_embed_file,  # pretrained embedding and word
         pretrain_words_file)
     vocab_size = len(vocab)
     # words2id = {}
     for w in vocab:
-        if w in pretrain_words2id:  # 判断token是否在外部大词典senna_words.lst中，若没有则采用numpy进行随机初始化
+        if w in pretrain_words2id: 
             idx = pretrain_words2id[w]
             word_embeds[word_to_id[w]] = pretrain_embed[idx]
-            # id = word_to_id[w]
-            # word_embed.append(pretrain_embed[id])  # 从embed_file里面取向量
 
         else:
             vec = np.random.normal(0, 0.1, parameters['word_dim'])
             word_embeds[word_to_id[w]] = vec
-            # word_embed.append(vec)
-        # words2id[w] = idx
+          
     #word_embeds['<UNK>'] = np.zeros(parameters['word_dim'])
-    # word_embed[0] = np.zeros(parameters['word_dim'])  # 将embed第0行向量置为0  对应<PAD>
+    # word_embed[0] = np.zeros(parameters['word_dim'])
     return word_embeds, pretrain_words2id
+
 pretrain_embed_file = "models/embed50.senna.npy"
 pretrain_words_file = "models/senna_words.lst"
 word_embeds, pretrain_words2id = final_embeddings(pretrain_embed_file, pretrain_words_file, vocab, word_to_id)
@@ -255,7 +253,7 @@ count = 0
 #vis = visdom.Visdom()
 sys.stdout.flush()
 
-def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq):#评估函数，求PCS，[word, id_to_tag[true_id], id_to_tag[pred_id]]，每个句子以‘’隔开
+def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq):# evaluation function，calculate the accuracy
     global best_test_Acc_post
     sentence_index = 1
     if isTest:
@@ -265,14 +263,14 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
         l_f_post_error = []
 	
     sentence_word = []
-    senGold_Lab = []#一个句子中的所有词对应的正确标签
-    senPre_Lab = []#一个句子中的所有词对应的预测标签
-    senPostPre_Lab = []#一个句子中的所有词对应的后处理过后的预测标签
-    Cot_bef = []#一个句子中所有词对应和上文的attention值
-    Cot_aft = []#一个句子中所有词对应和下文的attention值
+    senGold_Lab = []# golden label
+    senPre_Lab = []# predicted label
+    senPostPre_Lab = []# predicted label after post-processing
+    Cot_bef = []# attention score with the previous sentence
+    Cot_aft = []# attention score with the next sentence
 
-    ifAcc = 1#默认预测标签为正确标签
-    ifAcc_post = 1#默认后处理过后的预测标签为正确标签
+    ifAcc = 1
+    ifAcc_post = 1
 
     acc_num_post = 0.0
     acc_num = 0.0
@@ -281,12 +279,12 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
     score = Score_Seq   
     
 
-    # -----------------------------------------------------------后处理法---------------------------------------------------------------#
+    # -----------------------------------------------------------post-processing---------------------------------------------------------------#
     # if flag == False:
-    count_update_label = 0  # 记录后处理法更改实例的个数
+    count_update_label = 0 
     count_update_label1 = 0
-    count_sen = 0  # 记录更改的句子数
-    tip = 0  # 用来记录更改句子数的标志
+    count_sen = 0  
+    tip = 0  
     PCS_index = 0
     SemRoles_index = 0
     temp_SemRoles = ''
@@ -298,14 +296,14 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
         if SemRoles_index >= len(ans_AT):
             break
         if ans_AT[SemRoles_index].__contains__('I'):
-            current_SemRoles = SemRoles_test[SemRoles_index].strip('\r')  # 该词对应的语义角色
-            current_score = score[SemRoles_index]  # 该词I标签(语义角色)对应得分
+            current_SemRoles = SemRoles_test[SemRoles_index].strip('\r') 
+            current_score = score[SemRoles_index] 
             
             if current_score > max_score and current_SemRoles.__contains__('*') == False and current_SemRoles != '-' and current_SemRoles != 'V':
                 max_score = current_score
                 max_SemRoles = current_SemRoles
         if ans_AT[SemRoles_index] == '':
-            if max_SemRoles == '' and max_score == 0.0:  # 说明并没有识别正确I的可能.则从标记成O的标签中选取置信度最低的一个作为I标签
+            if max_SemRoles == '' and max_score == 0.0: 
                 max_score = 10000.0
                 i2 = SemRoles_index - 1
                 if PCS_index - 1 >= 0:
@@ -315,31 +313,31 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
                 ii = i1
     
                 while ii <= i2:
-                    current_SemRoles = SemRoles_test[ii].strip('\r')  # 该词对应的语义角色
-                    current_score = score[ii]  # 该词I标签(语义角色)对应得分
+                    current_SemRoles = SemRoles_test[ii].strip('\r')  
+                    current_score = score[ii]  
                     if current_SemRoles.__contains__('*') or current_SemRoles == '-' or current_SemRoles == 'V':
                         ii += 1
                         continue
-                    if current_score < max_score:  # 这里取对应O标签的置信度最低的词的语义角色
+                    if current_score < max_score: 
                         max_score = current_score
                         max_SemRoles = current_SemRoles
                     ii += 1
             PCS_index += 1
-            list_maxSemRoles.append(max_SemRoles)  # 把该句子对应最大得分（置信度）的语义角色记录
+            list_maxSemRoles.append(max_SemRoles) 
             max_SemRoles = ''
             max_score = 0.0
-            last_senfinindex = SemRoles_index - 1#记录上一个句子的结尾词的序号
-        SemRoles_index += 1  # 对下一个词进行判断i
+            last_senfinindex = SemRoles_index - 1
+        SemRoles_index += 1 
 
     PCS_index = 0
     SemRoles_index = 0
     temp_SemRoles = list_maxSemRoles[0]
-    while True:  # 根据语义角色进行后处理------------------------------------------------------------------------------
+    while True:  # post-processing based on semantic roles------------------------------------------------------------------------------
         if SemRoles_index >= len(ans_AT):
             break
         label = ans_AT[SemRoles_index]
-        current_SemRoles = SemRoles_test[SemRoles_index].strip('\r')  # 该词对应的语义角色
-        if current_SemRoles.__contains__('*') or current_SemRoles == '-' or current_SemRoles == 'V':  # 如果标注为* - V，则不是语义角色，必定不是focus
+        current_SemRoles = SemRoles_test[SemRoles_index].strip('\r') 
+        if current_SemRoles.__contains__('*') or current_SemRoles == '-' or current_SemRoles == 'V': 
             if ans_AT[SemRoles_index] == 'I':  # .__contains__('I'):
                 count_update_label += 1
                 if tip == 0:
@@ -347,14 +345,14 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
                     tip = 1
             ans_AT[SemRoles_index] = 'O'
             pass
-        elif current_SemRoles != temp_SemRoles and temp_SemRoles != '' and label != '':  # 判断当前词的语义角色和临时语义角色是否相同,如果不同判定为不是focus
+        elif current_SemRoles != temp_SemRoles and temp_SemRoles != '' and label != '': 
             if ans_AT[SemRoles_index] == 'I':  # .__contains__('I'):
                 count_update_label += 1
                 if tip == 0:
                     count_sen += 1
                     tip = 1
                 ans_AT[SemRoles_index] = 'O'
-        elif current_SemRoles == temp_SemRoles and temp_SemRoles != '' and label != '':  # 如果相同，则判定为focus，事实上一些例子中并非如此
+        elif current_SemRoles == temp_SemRoles and temp_SemRoles != '' and label != '': 
             if ans_AT[SemRoles_index] == 'O':  # .__contains__('O'):
                 count_update_label1 += 1
                 if tip == 0:
@@ -367,11 +365,11 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
                 break
             temp_SemRoles = list_maxSemRoles[PCS_index]
             tip = 0
-        SemRoles_index += 1  # 对下一个词进行判断
+        SemRoles_index += 1 
     print('后处理法更改实例的个数为--------------------：' + str(count_update_label) + '#' + str(count_update_label1) + ' 对应句子数：' + str(count_sen))
     str_change = '后处理法更改实例的个数为--------------------：' + str(count_update_label) + '#' + str(count_update_label1) + ' 对应句子数：' + str(count_sen)
 
-    # ------------------------------------------------------------后处理法----------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------post-processing----------------------------------------------------------------------------------------#
     
     cur_sem_id = -1
     last_sem_id = 0
@@ -412,14 +410,14 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
 	    ifAcc_post = 1
 	    last_sem_id = cur_sem_id+1
         else:
-            e = e.split()#按空格切分
-            word = e[0]#词
-            gold_label = e[1]#正确标签
-            pred_label = e[2]#预测标签
+            e = e.split()
+            word = e[0]
+            gold_label = e[1]
+            pred_label = e[2]
             cot_bef = e[3]
             cot_aft = e[4]
 
-	    post_pred_label = ans#经过后处理法的预测标签
+	    post_pred_label = ans
             sentence_word.append(word)
             senGold_Lab.append(gold_label)
             senPre_Lab.append(pred_label)
@@ -455,7 +453,7 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
 
 
 
-def evaluating(model, datas, best_Acc, best_Acc_post, is_Test, epoch): # 评估函数
+def evaluating(model, datas, best_Acc, best_Acc_post, is_Test, epoch): # evaluation function
     global max_epoch
     global max_epoch_post
     global senchangeby_post
@@ -501,7 +499,7 @@ def evaluating(model, datas, best_Acc, best_Acc_post, is_Test, epoch): # 评估�
         Topic = Variable(torch.FloatTensor(topic_te[index]))
 
         if use_gpu:
-            val, out, tag_score, Cot_bef, Cot_aft = model(dwords.cuda(), dpos.cuda(), dconNode.cuda(), ddepNode.cuda(), dsemroles.cuda(), dcue.cuda(), dloc.cuda(), dcontext_bef.cuda(), dcontext_aft.cuda(), ELMo.cuda(), ELMo_ConBef.cuda(), ELMo_ConAft.cuda(), Topic.cuda())#score , tag_sequence
+            val, out, tag_score, Cot_bef, Cot_aft = model(dwords.cuda(), dpos.cuda(), dconNode.cuda(), ddepNode.cuda(), dsemroles.cuda(), dcue.cuda(), dloc.cuda(), dcontext_bef.cuda(), dcontext_aft.cuda(), ELMo.cuda(), ELMo_ConBef.cuda(), ELMo_ConAft.cuda(), Topic.cuda())
         else:
             val, out, tag_score, Cot_bef, Cot_aft = model(dwords, dpos, dconNode, ddepNode, dsemroles, dcue, dloc, dcontext_bef, dcontext_aft, ELMo, ELMo_ConBef, ELMo_ConAft, Topic)
         predicted_id = out
@@ -534,7 +532,7 @@ def evaluating(model, datas, best_Acc, best_Acc_post, is_Test, epoch): # 评估�
     return best_Acc, new_Acc, best_Acc_post, new_Acc_post, save
 
 
-# 训练模型主函数
+# main function
 model.train(True)
 for epoch in range(1, 51):
     #for i, index in enumerate(np.random.permutation(len(train_data))):
