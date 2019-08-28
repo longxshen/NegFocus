@@ -1,5 +1,5 @@
 # NegFocus
-Bowei Zou, Longxiang Shen, Yu Hong, Guodong Zhou. Negative Focus Detection via Contextual Attention Mechanisms. In proceedings of EMNLP 2019. (Accepted)
+Longxiang Shen, Bowei Zou, Yu Hong, Guodong Zhou. Negative Focus Detection via Contextual Attention Mechanisms. In proceedings of EMNLP 2019. (Accepted)
 ## Prerequisition
 * Word embedding <br>
   https://allennlp.org/elmo <br>
