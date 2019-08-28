@@ -19,11 +19,11 @@ def load_sentences(path):
     """
     sentences = []
     sentence = []
-    for line in codecs.open(path, 'r', 'utf-8'):#这种方法可以指定一个编码打开文件，使用这个方法打开的文件读取返回的将是unicode。写入时，如果参数 是unicode，则使用open()时指定的编码进行编码后写入；如果是str，则先根据源代码文件声明的字符编码，解码成unicode后再进行前述 操作。相对内置的open()来说，这个方法比较不容易在编码上出现问题
+    for line in codecs.open(path, 'r', 'utf-8'):
         line = line.strip()
         if not line:
             if len(sentence) > 0:
-                sentences.append(sentence)#3重列表
+                sentences.append(sentence)
                 sentence = []
         else:
             word = line.split()
@@ -35,8 +35,8 @@ def pos_mapping(sentences):
     """
     Create a dictionary and a mapping of POS labels, sorted by frequency.
     """
-    pos = [[x[1] for x in s] for s in sentences]  # 二重列表，[[VB,NN,VP],[CC,VB]]
-    dico = create_dico(pos)  # key:word, value:出现次数
+    pos = [[x[1] for x in s] for s in sentences]
+    dico = create_dico(pos)
     dico['<UNK>'] = 10000000
     pos_to_id, id_to_pos = create_mapping(dico)
     print("Found %i unique pos (%i in total)" % (
@@ -48,8 +48,8 @@ def conNode_mapping(sentences):
     """
     Create a dictionary and a mapping of chunk labels, sorted by frequency.
     """
-    conNode = [[x[2] for x in s] for s in sentences]  # 二重列表，[[B-VP,I-VP,O],[O,B-VP]]
-    dico = create_dico(conNode)  # key:word, value:出现次数
+    conNode = [[x[2] for x in s] for s in sentences]
+    dico = create_dico(conNode)
     dico['<UNK>'] = 10000000
     conNode_to_id, id_to_conNode = create_mapping(dico)
     print("Found %i unique conNode (%i in total)" % (
@@ -61,8 +61,8 @@ def depNode_mapping(sentences):
     """
     Create a dictionary and a mapping of dependency node labels, sorted by frequency.
     """
-    depNode = [[x[3] for x in s] for s in sentences]  # 二重列表，[[xcomp,dobj,root],[det,amod]]
-    dico = create_dico(depNode)  # key:word, value:出现次数
+    depNode = [[x[3] for x in s] for s in sentences]
+    dico = create_dico(depNode)
     dico['<UNK>'] = 10000000
     depNode_to_id, id_to_depNode = create_mapping(dico)
     print("Found %i unique depNode (%i in total)" % (
@@ -74,8 +74,8 @@ def semroles_mapping(sentences):
     """
     Create a dictionary and a mapping of semantic roles labels, sorted by frequency.
     """
-    semroles = [[x[4] for x in s] for s in sentences]  # 二重列表，[[A1,A0,AM-MOD],[V,AM-NEG]]
-    dico = create_dico(semroles)  # key:word, value:出现次数
+    semroles = [[x[4] for x in s] for s in sentences]
+    dico = create_dico(semroles)
     dico['<UNK>'] = 10000000
     semroles_to_id, id_to_semroles = create_mapping(dico)
     print("Found %i unique semroles (%i in total)" % (
@@ -87,8 +87,8 @@ def loc_mapping(sentences):
     """
     Create a dictionary and a mapping of location labels, sorted by frequency.
     """
-    loc = [[x[6] for x in s] for s in sentences]  # 二重列表，[[-5,-4,-3],[-2,-1]]
-    dico = create_dico(loc)  # key:word, value:出现次数
+    loc = [[x[6] for x in s] for s in sentences]
+    dico = create_dico(loc)
     dico['<UNK>'] = 10000000
     loc_to_id, id_to_loc = create_mapping(dico)
     print("Found %i unique location (%i in total)" % (
@@ -100,8 +100,8 @@ def word_mapping(sentences, lower=True):
     """
     Create a dictionary and a mapping of words, sorted by frequency.
     """
-    words = [[x[0].lower() if lower else x[0] for x in s] for s in sentences]#二重列表，[[I,have,a],[a,dream]]
-    dico = create_dico(words)#key:word, value:出现次数
+    words = [[x[0].lower() if lower else x[0] for x in s] for s in sentences]
+    dico = create_dico(words)
 
     dico['<UNK>'] = 10000000
     word_to_id, id_to_word = create_mapping(dico)
@@ -125,14 +125,15 @@ def tag_mapping(sentences):
 def prepare_dataset(sentences, word_to_id, tag_to_id, pos_to_id, conNode_to_id, depNode_to_id, semroles_to_id, loc_to_id, lower=True ):
     """
     Prepare the dataset. Return a list of lists of dictionaries containing:
-        - word indexes
-        - word char indexes
-        - tag indexes
+        - str_words, a sequence of words
+        - words, word indexes
+        - tags, tag indexes
+	...
     """
     def f(x): return x.lower() if lower else x
     data = []
     for s in sentences:
-        str_words = [w[0] for w in s]#[I,have,a]
+        str_words = [w[0] for w in s]
         words = [word_to_id[f(w) if f(w) in word_to_id else '<UNK>']
                  for w in str_words]
         tags = [tag_to_id[w[-1]] for w in s]
@@ -141,7 +142,7 @@ def prepare_dataset(sentences, word_to_id, tag_to_id, pos_to_id, conNode_to_id, 
         dependency_node = [depNode_to_id[w[3]] for w in s]
         semroles = [semroles_to_id[w[4]] for w in s]
         semroles_word = [w[4] for w in s]
-        cue = [word_to_id[f(w[5])] for w in s]#记录每个句子中的动词触发词
+        cue = [word_to_id[f(w[5])] for w in s]
         loc = [loc_to_id[w[6]] for w in s]
 
         data.append({
