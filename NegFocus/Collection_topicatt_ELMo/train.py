@@ -164,7 +164,7 @@ def final_embeddings(pretrain_embed_file, pretrain_words_file, vocab, word_to_id
             word_embeds[word_to_id[w]] = vec
             
     #word_embeds['<UNK>'] = np.zeros(parameters['word_dim'])
-    #word_embed[0] = np.zeros(parameters['word_dim'])  # 将embed第0行向量置为0  对应<PAD>
+    #word_embed[0] = np.zeros(parameters['word_dim'])
     return word_embeds, pretrain_words2id
 
 pretrain_embed_file = "models/embed50.senna.npy"
