@@ -38,7 +38,7 @@ optparser.add_option(
     type='int', help="Token embedding dimension"
 )
 optparser.add_option(
-    "-W", "--word_lstm_dim", default="300",
+    "-W", "--word_lstm_dim", default="250",
     type='int', help="Token LSTM hidden layer size"
 )
 optparser.add_option(
