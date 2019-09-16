@@ -600,8 +600,6 @@ for epoch in range(1, 51):
 	    best_test_Acc, new_test_Acc, best_test_Acc_post, new_test_Acc_post, save = evaluating(model, test_data, best_test_Acc, best_test_Acc_post, True, epoch)
             print('test Acc: ' + str(new_test_Acc))
 	    print('test Acc postprocessing: ' + str(new_test_Acc_post))
-            if save:
-                torch.save(model, model_name)
 
             if count % 500 == 0:
 
