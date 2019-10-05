@@ -1,5 +1,6 @@
 File declaration
-train.py  :train, test and evaulation
+train.py  :train and evaulation
+test.py   :test the model
 model.py  :main model
 loader.py :dataset preprocess
 utils.py  :initialize parameters

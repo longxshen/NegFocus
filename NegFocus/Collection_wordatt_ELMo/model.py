@@ -42,71 +42,39 @@ class BiLSTM_CRF(nn.Module):
 
     def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim,
                  pre_word_embeds=None, use_gpu=False,
-                 use_crf=True, pos_embedding_dim=None,
-		 conNode_embedding_dim=None, depNode_embedding_dim=None, semroles_embedding_dim=None, cue_embedding_dim=None, loc_embedding_dim=None, context_embedding_dim=None):
+                 use_crf=True, semroles_embedding_dim=None, context_embedding_dim=None):
         super(BiLSTM_CRF, self).__init__()
         self.use_gpu = use_gpu
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
         self.tag_to_ix = tag_to_ix
-	self.pos_embedding_dim = pos_embedding_dim
-        self.conNode_embedding_dim = conNode_embedding_dim
-        self.depNode_embedding_dim = depNode_embedding_dim
         self.semroles_embedding_dim = semroles_embedding_dim
-	self.cue_embedding_dim = cue_embedding_dim
-	self.loc_embedding_dim = loc_embedding_dim
 	self.context_embedding_dim = context_embedding_dim	
 
-        self.n_pos = 56
-        self.n_conNode = 27
-        self.n_depNode = 50
         self.n_semroles = 101
-	self.n_cue = vocab_size
-	self.n_loc = 177
 
         self.use_crf = use_crf
         self.tagset_size = len(tag_to_ix)
 
         print('hidden_dim: %d, ' % (hidden_dim))
 	
-	if self.pos_embedding_dim:
-            self.pos_embeds = nn.Embedding(self.n_pos, self.pos_embedding_dim)
-            init_embedding(self.pos_embeds.weight)
-
-        if self.conNode_embedding_dim:
-            self.conNode_embeds = nn.Embedding(self.n_conNode, self.conNode_embedding_dim)
-            init_embedding(self.conNode_embeds.weight)
-
-        if self.depNode_embedding_dim:
-            self.depNode_embeds = nn.Embedding(self.n_depNode, self.depNode_embedding_dim)
-            init_embedding(self.depNode_embeds.weight)
-
         if self.semroles_embedding_dim:
             self.semroles_embeds = nn.Embedding(self.n_semroles, self.semroles_embedding_dim)
             init_embedding(self.semroles_embeds.weight)
-	
-	if self.cue_embedding_dim:
-            self.cue_embeds = nn.Embedding(self.n_cue, self.cue_embedding_dim)
-            init_embedding(self.cue_embeds.weight)
 
-        if self.loc_embedding_dim:
-            self.loc_embeds = nn.Embedding(self.n_loc, self.loc_embedding_dim)
-            init_embedding(self.loc_embeds.weight)
+	#if self.context_embedding_dim:
+        #    self.context_embeds = nn.Embedding(vocab_size, self.context_embedding_dim)
+	#    init_embedding(self.context_embeds.weight)
 
-	if self.context_embedding_dim:
-            self.context_embeds = nn.Embedding(vocab_size, self.context_embedding_dim)
-	    #init_embedding(self.context_embeds.weight)
-
-
-        self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
-        if pre_word_embeds is not None:
-            self.pre_word_embeds = True
-            self.word_embeds.weight = nn.Parameter(torch.FloatTensor(pre_word_embeds))
-            if self.context_embedding_dim:
-	        self.context_embeds.weight = nn.Parameter(torch.FloatTensor(pre_word_embeds))
-        else:
-            self.pre_word_embeds = False
+        #self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
+        #if pre_word_embeds is not None:
+        #    self.pre_word_embeds = True
+        #    self.word_embeds.weight = nn.Parameter(torch.FloatTensor(pre_word_embeds))
+        #    if self.context_embedding_dim:
+	#        self.context_embeds.weight = nn.Parameter(torch.FloatTensor(pre_word_embeds))
+        #else:
+        #    self.pre_word_embeds = False
 
         self.dropout = nn.Dropout(0.3)
 
@@ -143,25 +111,15 @@ class BiLSTM_CRF(nn.Module):
 
         return score
 
-    def _get_lstm_features(self, sentence, pos, conNode, depNode, semroles, cue, loc, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft, Topic): 
+    def _get_lstm_features(self, sentence, semroles, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft): 
         # LSTM main framework which contains word-attention
         #embeds = self.word_embeds(sentence)
         embeds = ELMo
-	if self.pos_embedding_dim:
-            pos_embedding = self.pos_embeds(pos)
-        if self.conNode_embedding_dim:
-            conNode_embedding = self.conNode_embeds(conNode)
-        if self.depNode_embedding_dim:
-            depNode_embedding = self.depNode_embeds(depNode)
         if self.semroles_embedding_dim:
             semroles_embedding = self.semroles_embeds(semroles)	
-	if self.cue_embedding_dim:
-            cue_embedding = self.cue_embeds(cue)
-        if self.loc_embedding_dim:
-            loc_embedding = self.loc_embeds(loc)
-	if self.context_embedding_dim:
-            context_bef_embedding = self.context_embeds(context_bef)#context_seqlen*context_embedding_dim
-            context_aft_embedding = self.context_embeds(context_aft)
+	#if self.context_embedding_dim:
+        #    context_bef_embedding = self.context_embeds(context_bef)#context_seqlen*context_embedding_dim
+        #    context_aft_embedding = self.context_embeds(context_aft)
 
         Cot_bef = []
         Cot_aft = []
@@ -204,21 +162,9 @@ class BiLSTM_CRF(nn.Module):
 	    embeds = torch.cat((embeds,att_aft_tensor), 1)#seq_len * (3*word_dim)
             #print(embeds.size())
 
-        if self.pos_embedding_dim:
-            embeds = torch.cat((embeds,pos_embedding),1)
-        if self.conNode_embedding_dim:
-            embeds = torch.cat((embeds,conNode_embedding),1)
-        if self.depNode_embedding_dim:
-            embeds = torch.cat((embeds,depNode_embedding),1)
         if self.semroles_embedding_dim:
             embeds = torch.cat((embeds,semroles_embedding),1)
-        if self.cue_embedding_dim:
-            embeds = torch.cat((embeds,cue_embedding),1)
-        if self.loc_embedding_dim:
-            embeds = torch.cat((embeds, loc_embedding), 1)
         
-#        Topic = self.topic2large(Topic)
-#        embeds = torch.cat((embeds,Topic),1)
         embeds = embeds.unsqueeze(1)
         embeds = self.dropout(embeds)
         lstm_out, _ = self.lstm(embeds)
@@ -299,11 +245,11 @@ class BiLSTM_CRF(nn.Module):
 	best_path_score.reverse()
         return path_score, best_path, best_path_score
 
-    def neg_log_likelihood(self, sentence, tags, pos, conNode, depNode, semroles, cue, loc, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft, Topic): 
+    def neg_log_likelihood(self, sentence, tags, semroles, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft): 
         # train model and calculate the loss
 	# sentence, tags is a list of ints
         # features is a 2D tensor, len(sentence) * self.tagset_size
-        feats, _, _ = self._get_lstm_features(sentence, pos, conNode, depNode, semroles, cue, loc, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft, Topic)#Seq_len * tagset_size
+        feats, _, _ = self._get_lstm_features(sentence, semroles, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft)#Seq_len * tagset_size
 
         if self.use_crf:
             forward_score = self._forward_alg(feats)
@@ -315,9 +261,9 @@ class BiLSTM_CRF(nn.Module):
             return scores
 
 
-    def forward(self, sentence, pos, conNode, depNode, semroles, cue, loc, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft, Topic): 
+    def forward(self, sentence, semroles, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft): 
         # get the max score tag_seq
-	feats, Cot_bef, Cot_aft = self._get_lstm_features(sentence, pos, conNode, depNode, semroles, cue, loc, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft, Topic)
+	feats, Cot_bef, Cot_aft = self._get_lstm_features(sentence, semroles, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft)
   
         if self.use_crf: # viterbi to get tag_seq
             score, tag_seq, seq_score = self.viterbi_decode(feats)

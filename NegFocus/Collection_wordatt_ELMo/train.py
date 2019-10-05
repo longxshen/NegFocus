@@ -18,7 +18,7 @@ from model import BiLSTM_CRF
 t = time.time()
 models_path = "models/"
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 optparser = optparse.OptionParser()
 optparser.add_option(
@@ -69,6 +69,11 @@ optparser.add_option(
     '--name', default='test',
     help='model name'
 )
+optparser.add_option(
+    '--model_test', default="1",
+    help='if test the model'
+)
+
 opts = optparser.parse_args()[0]
 
 parameters = OrderedDict()
@@ -79,6 +84,7 @@ parameters['crf'] = opts.crf == 1
 parameters['dropout'] = opts.dropout
 parameters['reload'] = opts.reload == 1
 parameters['name'] = opts.name
+parameters['model_test'] = opts.model_test
 
 parameters['use_gpu'] = opts.use_gpu == 1 and torch.cuda.is_available()
 use_gpu = parameters['use_gpu']
@@ -127,7 +133,7 @@ test_data = prepare_dataset(
 print("%i / %i / %i sentences in train / dev / test." % (
     len(train_data), len(dev_data), len(test_data)))
 
-
+'''
 def counts(dic):
     vocab = set()
     maxlen = 0
@@ -175,8 +181,9 @@ def final_embeddings(pretrain_embed_file, pretrain_words_file, vocab, word_to_id
 pretrain_embed_file = "models/embed50.senna.npy"
 pretrain_words_file = "models/senna_words.lst"
 word_embeds, pretrain_words2id = final_embeddings(pretrain_embed_file, pretrain_words_file, vocab, word_to_id)
-
 print('Loaded %i pretrained embeddings.' % len(pretrain_words2id))
+'''
+word_embeds = None
 
 fELMo_traddde = "models/ELMo_tr&de_vector.npy"
 fELMo_te = "models/ELMo_te_vector.npy"
@@ -186,26 +193,27 @@ fELMo_ConAft_traddde = "models/ELMo_tr&de_conAft_vector.npy"
 fELMo_ConAft_te = "models/ELMo_te_conAft_vector.npy"
 
 elmo_traddde = np.load(fELMo_traddde)
+elmo_tr = elmo_traddde[:2304]
+elmo_de = elmo_traddde[2304:]
 elmo_te = np.load(fELMo_te)
 elmo_conbef_traddde = np.load(fELMo_ConBef_traddde)
+elmo_conbef_tr = elmo_conbef_traddde[:2304]
+elmo_conbef_de = elmo_conbef_traddde[2304:]
 elmo_conbef_te = np.load(fELMo_ConBef_te)
 elmo_conaft_traddde = np.load(fELMo_ConAft_traddde)
+elmo_conaft_tr = elmo_conaft_traddde[:2304]
+elmo_conaft_de = elmo_conaft_traddde[2304:]
 elmo_conaft_te = np.load(fELMo_ConAft_te)
 
-ftopic_traddde = "models/Large1_LsiTopic80Com_tr&de.npy"
-ftopic_te = "models/Large1_LsiTopic80Com_te.npy"
-topic_traddde = np.load(ftopic_traddde)
-topic_te = np.load(ftopic_te)
 
-
-with open(mapping_file, 'wb') as f:
-    mappings = {
-        'word_to_id': word_to_id,
-        'tag_to_id': tag_to_id,
-        'parameters': parameters,
-        'word_embeds': word_embeds
-    }
-    cPickle.dump(mappings, f)
+#with open(mapping_file, 'wb') as f:
+#    mappings = {
+#        'word_to_id': word_to_id,
+#        'tag_to_id': tag_to_id,
+#        'parameters': parameters,
+#        'word_embeds': word_embeds
+#    }
+#    cPickle.dump(mappings, f)
 
 print('word_to_id: ', len(word_to_id))
 model = BiLSTM_CRF(vocab_size=len(word_to_id),
@@ -215,12 +223,7 @@ model = BiLSTM_CRF(vocab_size=len(word_to_id),
                    use_gpu=use_gpu,
                    pre_word_embeds=word_embeds,
                    use_crf=True,     #parameters['crf'],
-		   #pos_embedding_dim=10,
-                   #conNode_embedding_dim=10,
-                   #depNode_embedding_dim=10,
                    semroles_embedding_dim=2000,
-		   #cue_embedding_dim=10,
-		   #loc_embedding_dim=10,
 		   context_embedding_dim=None)
 if parameters['reload']:
     model.load_state_dict(torch.load(model_name))
@@ -366,7 +369,7 @@ def Score_eval(prediction, datas, isTest, list_SemRole, Score_Seq, prelabel_seq)
             temp_SemRoles = list_maxSemRoles[PCS_index]
             tip = 0
         SemRoles_index += 1 
-    print('后处理法更改实例的个数为--------------------：' + str(count_update_label) + '#' + str(count_update_label1) + ' 对应句子数：' + str(count_sen))
+    #print('后处理法更改实例的个数为--------------------：' + str(count_update_label) + '#' + str(count_update_label1) + ' 对应句子数：' + str(count_sen))
     str_change = '后处理法更改实例的个数为--------------------：' + str(count_update_label) + '#' + str(count_update_label1) + ' 对应句子数：' + str(count_sen)
 
     # ------------------------------------------------------------post-processing----------------------------------------------------------------------------------------#
@@ -493,15 +496,19 @@ def evaluating(model, datas, best_Acc, best_Acc_post, is_Test, epoch): # evaluat
 	dloc = Variable(torch.LongTensor(loc))
 	dcontext_bef = Variable(torch.LongTensor(context_bef))
         dcontext_aft = Variable(torch.LongTensor(context_aft))
-        ELMo = Variable(torch.FloatTensor(elmo_te[index]))
-        ELMo_ConBef = Variable(torch.FloatTensor(elmo_conbef_te[index]))
-        ELMo_ConAft = Variable(torch.FloatTensor(elmo_conaft_te[index]))
-        Topic = Variable(torch.FloatTensor(topic_te[index]))
+        if is_Test:
+            ELMo = Variable(torch.FloatTensor(elmo_te[index]))
+            ELMo_ConBef = Variable(torch.FloatTensor(elmo_conbef_te[index]))
+            ELMo_ConAft = Variable(torch.FloatTensor(elmo_conaft_te[index]))
+        else:
+            ELMo = Variable(torch.FloatTensor(elmo_de[index]))
+            ELMo_ConBef = Variable(torch.FloatTensor(elmo_conbef_de[index]))
+            ELMo_ConAft = Variable(torch.FloatTensor(elmo_conaft_de[index]))
 
         if use_gpu:
-            val, out, tag_score, Cot_bef, Cot_aft = model(dwords.cuda(), dpos.cuda(), dconNode.cuda(), ddepNode.cuda(), dsemroles.cuda(), dcue.cuda(), dloc.cuda(), dcontext_bef.cuda(), dcontext_aft.cuda(), ELMo.cuda(), ELMo_ConBef.cuda(), ELMo_ConAft.cuda(), Topic.cuda())
+            val, out, tag_score, Cot_bef, Cot_aft = model(dwords.cuda(), dsemroles.cuda(), dcontext_bef.cuda(), dcontext_aft.cuda(), ELMo.cuda(), ELMo_ConBef.cuda(), ELMo_ConAft.cuda())
         else:
-            val, out, tag_score, Cot_bef, Cot_aft = model(dwords, dpos, dconNode, ddepNode, dsemroles, dcue, dloc, dcontext_bef, dcontext_aft, ELMo, ELMo_ConBef, ELMo_ConAft, Topic)
+            val, out, tag_score, Cot_bef, Cot_aft = model(dwords, dsemroles, dcontext_bef, dcontext_aft, ELMo, ELMo_ConBef, ELMo_ConAft)
         predicted_id = out
         Score_Seq.extend(tag_score)
         Score_Seq.append('')
@@ -521,108 +528,80 @@ def evaluating(model, datas, best_Acc, best_Acc_post, is_Test, epoch): # evaluat
     if new_Acc > best_Acc:
         best_Acc = new_Acc
         #save = True
-	if is_Test:
-	    max_epoch = epoch
+	max_epoch = epoch
     if new_Acc_post > best_Acc_post:
         best_Acc_post = new_Acc_post
 	senchangeby_post = str_change
         save = True
-	if is_Test:
-	    max_epoch_post = epoch
+	max_epoch_post = epoch
     return best_Acc, new_Acc, best_Acc_post, new_Acc_post, save
 
-
 # main function
-model.train(True)
-for epoch in range(1, 51):
-    #for i, index in enumerate(np.random.permutation(len(train_data))):
-    for i, index in enumerate(np.random.permutation(len(train_data+dev_data))):
-        tr = time.time()
-        count += 1
-        mix_data = train_data + dev_data
-        #data = train_data[index]
-        data = mix_data[index]
-	#print(data)
-        model.zero_grad()
+if __name__ == '__main__':
+    model.train(True)
+    for epoch in range(1, 51):
+        for i, index in enumerate(np.random.permutation(len(train_data+dev_data))):
+            tr = time.time()
+            count += 1
+            mix_data = train_data + dev_data
+            data = mix_data[index]
+            model.zero_grad()
 
-        sentence_in = data['words']
-        sentence_in = Variable(torch.LongTensor(sentence_in))
-        tags = data['tags']
-	pos = data['pos']
-        conNode = data['constituency_node']
-        depNode = data['dependency_node']
-        semroles = data['semroles']
-	cue = data['cue']
-	loc = data['loc']
-	context_bef = data['context_bef']
-        context_aft = data['context_aft']	
+            sentence_in = data['words']
+            sentence_in = Variable(torch.LongTensor(sentence_in))
+            tags = data['tags']
+            semroles = data['semroles']
+	    context_bef = data['context_bef']
+            context_aft = data['context_aft']	
 
+            targets = torch.LongTensor(tags)
+            semroles = Variable(torch.LongTensor(semroles))
+	    context_bef = Variable(torch.LongTensor(context_bef))
+            context_aft = Variable(torch.LongTensor(context_aft))
+            ELMo = Variable(torch.FloatTensor(elmo_traddde[index]))
+            ELMo_ConBef = Variable(torch.FloatTensor(elmo_conbef_traddde[index]))
+            ELMo_ConAft = Variable(torch.FloatTensor(elmo_conaft_traddde[index]))
 
-        targets = torch.LongTensor(tags)
-	pos = Variable(torch.LongTensor(pos))
-        conNode = Variable(torch.LongTensor(conNode))
-        depNode = Variable(torch.LongTensor(depNode))
-        semroles = Variable(torch.LongTensor(semroles))
-	cue = Variable(torch.LongTensor(cue))	
-	loc = Variable(torch.LongTensor(loc))
-	context_bef = Variable(torch.LongTensor(context_bef))
-        context_aft = Variable(torch.LongTensor(context_aft))
-        ELMo = Variable(torch.FloatTensor(elmo_traddde[index]))
-        ELMo_ConBef = Variable(torch.FloatTensor(elmo_conbef_traddde[index]))
-        ELMo_ConAft = Variable(torch.FloatTensor(elmo_conaft_traddde[index]))
-        Topic = Variable(torch.FloatTensor(topic_traddde[index]))
+            if use_gpu:
+                neg_log_likelihood = model.neg_log_likelihood(sentence_in.cuda(), targets.cuda(), semroles.cuda(), context_bef.cuda(), context_aft.cuda(), ELMo.cuda(), ELMo_ConBef.cuda(), ELMo_ConAft.cuda())
+            else:
+                neg_log_likelihood = model.neg_log_likelihood(sentence_in, targets, semroles, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft)
 
-        if use_gpu:
-            neg_log_likelihood = model.neg_log_likelihood(sentence_in.cuda(), targets.cuda(),
-							  pos.cuda(), conNode.cuda(), depNode.cuda(), semroles.cuda(), cue.cuda(), loc.cuda(), context_bef.cuda(), context_aft.cuda(), ELMo.cuda(), ELMo_ConBef.cuda(), ELMo_ConAft.cuda(), Topic.cuda())
-        else:
-            neg_log_likelihood = model.neg_log_likelihood(sentence_in, targets,
-							  pos, conNode, depNode, semroles, cue, loc, context_bef, context_aft, ELMo, ELMo_ConBef, ELMo_ConAft, Topic)
+            loss += neg_log_likelihood.data[0] / len(data['words'])
+            neg_log_likelihood.backward()
+            torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
+            optimizer.step()
 
-        loss += neg_log_likelihood.data[0] / len(data['words'])
-        neg_log_likelihood.backward()
-        torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
-        optimizer.step()
-
-        if count % plot_every == 0:
-            loss /= plot_every
-            print(count, ': ', loss)
-            if losses == []:
+            if count % plot_every == 0:
+                loss /= plot_every
+                print(count, ': ', loss)
+                if losses == []:
+                    losses.append(loss)
                 losses.append(loss)
-            losses.append(loss)
-            loss = 0.0
+                loss = 0.0
 
-	if count % 50 == 0:
-            model.train(False)
+	    if count % 50 == 0:
+                model.train(False)
                       	   
-	    print('epoch:---- '+str(epoch))
-           
-	    best_test_Acc, new_test_Acc, best_test_Acc_post, new_test_Acc_post, save = evaluating(model, test_data, best_test_Acc, best_test_Acc_post, True, epoch)
-            print('test Acc: ' + str(new_test_Acc))
-	    print('test Acc postprocessing: ' + str(new_test_Acc_post))
+	        print('epoch:---- '+str(epoch))
+	        best_dev_Acc, new_dev_Acc, best_dev_Acc_post, new_dev_Acc_post, _ = evaluating(model, dev_data, best_dev_Acc, best_dev_Acc_post, False, epoch)
+                print('dev Acc: ' + str(new_dev_Acc))
+	        print('dev Acc postprocessing: ' + str(new_dev_Acc_post))
 
-            if count % 500 == 0:
+                if count % 500 == 0:
+                    print('epoch: ' + str(max_epoch) + '  Best dev Acc: ' + str(best_dev_Acc))
+		    print('epoch: ' + str(max_epoch_post) + '  Best dev Acc postprocessing: ' + str(best_dev_Acc_post))
+	 	    #print(senchangeby_post)
+                sys.stdout.flush()
 
-                print('epoch: ' + str(max_epoch) + '  Best test Acc: ' + str(best_test_Acc))
-		print('epoch: ' + str(max_epoch_post) + '  Best test Acc postprocessing: ' + str(best_test_Acc_post))
-	 	print(senchangeby_post)
-            sys.stdout.flush()
+                model.train(True)
 
-            model.train(True)
+            if count % len(mix_data) == 0:
+                adjust_learning_rate(optimizer, lr=learning_rate/(1+0.05*count/len(mix_data)))
 
-        if count % len(mix_data) == 0:
-            adjust_learning_rate(optimizer, lr=learning_rate/(1+0.05*count/len(mix_data)))
-
-print('epoch: ' + str(max_epoch) + '  All Best test Acc: ' + str(best_test_Acc))
-print('epoch: ' + str(max_epoch_post) + '  All Best test Acc postprocessing: ' + str(best_test_Acc_post))
-print(time.time() - t)
-delta = time.time() - t
-print('hour:%d , minute:%d , second:%d' % (delta/3600,delta%3600/60,delta%3600%60))
-fp = open("result.txt",'w')
-fp.write('epoch: ' + str(max_epoch) + '  All Best test Acc: ' + str(best_test_Acc))
-fp.write('epoch: ' + str(max_epoch) + '  All Best test Acc postprocessing: ' + str(best_test_Acc_post))
-
-fp.close()
-
-
+    print('epoch: ' + str(max_epoch) + '  All Best dev Acc: ' + str(best_dev_Acc))
+    print('epoch: ' + str(max_epoch_post) + '  All Best dev Acc postprocessing: ' + str(best_dev_Acc_post))
+    print(time.time() - t)
+    delta = time.time() - t
+    print('hour:%d , minute:%d , second:%d' % (delta/3600,delta%3600/60,delta%3600%60))
 
