@@ -3,7 +3,7 @@
 from train import *
 
 # main function
-model = torch.load('models/saved_model_69.94')
+model = torch.load('models/saved_model')
 best_test_Acc, new_test_Acc, best_test_Acc_post, new_test_Acc_post, _ = evaluating(model, test_data, best_test_Acc, best_test_Acc_post, True, 1)
 print('test Acc: ' + str(new_test_Acc))
 print('test Acc postprocessing: ' + str(new_test_Acc_post))
